@@ -1,0 +1,38 @@
+- name: Install MYSQL libraries # installing mysql libraries, to run the mysql and setting up the root password
+  ansible.builtin.pip:
+    name: "{{ item }}"
+    executable: pip3.9
+  loop:
+    - cryptography
+    - PyMySQL 
+
+- name: Installing mysql server
+  ansible.builtin.package:
+    name: mysql-server
+    state: installed
+
+- name: start and enable mysql server
+  ansible.builtin.service:
+    name: mysqld
+    state: started
+    enabled: yes
+
+- name: connect to mysql server 
+  community.mysql.mysql_info:
+    login_user: root
+    login_password: ExpenseApp@1
+    login_host: mysql.navyahomes.online
+  register: mysql_info        # taking the output for the above 3 lines, so that we will know whether the root password is set up or not.
+  ignore_errors: true # mysql error handling, 
+
+- name: print the output
+  ansible.builtin.debug:
+    msg: "MYSQL info: {{ mysql_info }}"
+
+# when the above 2 tasks fails then the below task will run to set up root password
+
+- name: Set the root password
+  ansible.builtin.command: " mysql_secure_installation --set-root-pass ExpenseApp@1 "
+  when: mysql_info.failed is true
+
+  
